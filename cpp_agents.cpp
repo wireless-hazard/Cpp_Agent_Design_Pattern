@@ -1,12 +1,21 @@
 #include <stdio.h>
+#include <iostream>
+#include <string>
 #include <thread>
+#include <queue>
+#include <chrono>
 
 
-void printing(const char *parameter){
-	printf("%s\n", parameter);
+static void printing(std::queue<std::string>& cmd_queue){
+
+	
+	// std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+	std::string cmds = cmd_queue.front();
+	std::cout<< cmds <<"\n";
 }
 
 namespace agency {
+
 class thread_RAII : public std::thread{
 
 	using thread::thread; //Inherits all constructor from thread
@@ -18,13 +27,14 @@ public:
 
 class Agent{
 public:
-	explicit Agent(const char *parameter) : t1{printing, parameter} {
-
+	explicit Agent(const char *parameter) : task{printing, std::ref(cmd_queue)}{
+		cmd_queue.push(parameter);
 	}
-	~Agent(){printf("Agent is out!!\n");}
+	~Agent(){}
 
 private:
-	agency::thread_RAII t1;
+	std::queue<std::string> cmd_queue;
+	agency::thread_RAII task;
 };
 
 } //end namespace agency 
@@ -32,5 +42,5 @@ private:
 
 
 int main(){
-	agency::Agent Smith("This string");
+	agency::Agent Smith("That string");
 }
