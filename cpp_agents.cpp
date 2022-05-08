@@ -5,36 +5,51 @@
 #include <queue>
 #include <chrono>
 
+namespace local_function{
 
-static void printing(std::queue<std::string>& cmd_queue){
-
-	
-	// std::this_thread::sleep_for(std::chrono::milliseconds{1000});
-	std::string cmds = cmd_queue.front();
-	std::cout<< cmds <<"\n";
+std::string parse_command(const std::string& command){
+	std::string cmd_param = command.substr(command.find(" ")+1);
+	return std::move(cmd_param);
 }
+
+void task_implm(std::queue<std::string>& cmd_queue, std::queue<std::string>& reply_queue){ //TODO: Move the thread function to another file
+
+	while(true){
+		while(cmd_queue.empty()){
+			std::this_thread::sleep_for(std::chrono::milliseconds{100}); //This will be exchanged by a condition_variable
+		}
+		std::string cmds = cmd_queue.front();
+		reply_queue.push(parse_command(cmds));
+		break;
+	}
+	return;
+}
+} //End namespace local_function
 
 namespace agency {
 
-class thread_RAII : public std::thread{
-
-	using thread::thread; //Inherits all constructor from thread
-
-public:
-	~thread_RAII(){if(this->joinable()) this->join();}
-
-};
-
 class Agent{
 public:
-	explicit Agent(const char *parameter) : task{printing, std::ref(cmd_queue)}{
-		cmd_queue.push(parameter);
+	explicit Agent(void){
+		this->task = std::thread{local_function::task_implm, std::ref(cmd_queue), std::ref(reply_queue)};
 	}
-	~Agent(){}
+	~Agent(){
+		task.join();
+	}
+	void getReply(void){
+		while(this->reply_queue.empty()){
+			std::this_thread::sleep_for(std::chrono::milliseconds{100}); //This will be exchanged by a condition_variable
+		}
+		std::cout<<this->reply_queue.front()<<"\n";
+	}
+	void sendCommand(const char *command){
+		this->cmd_queue.push(command);
+	}
 
-private:
+protected:
 	std::queue<std::string> cmd_queue;
-	agency::thread_RAII task;
+	std::queue<std::string> reply_queue;
+	std::thread task;
 };
 
 } //end namespace agency 
@@ -42,5 +57,7 @@ private:
 
 
 int main(){
-	agency::Agent Smith("That string");
+	agency::Agent Smith;
+	Smith.sendCommand("command value");
+	Smith.getReply();
 }
