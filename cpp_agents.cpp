@@ -16,7 +16,7 @@ void task_implm(std::queue<std::string>& cmd_queue, std::queue<std::string>& rep
 
 	while(true){
 		while(cmd_queue.empty()){
-			std::this_thread::sleep_for(std::chrono::milliseconds{100}); //This will be exchanged by a condition_variable
+			std::this_thread::sleep_for(std::chrono::milliseconds{100}); //This will be switched for a condition_variable
 		}
 		std::string cmds = cmd_queue.front();
 		reply_queue.push(parse_command(cmds));
@@ -34,11 +34,11 @@ public:
 		this->task = std::thread{local_function::task_implm, std::ref(cmd_queue), std::ref(reply_queue)};
 	}
 	~Agent(){
-		task.join();
+		this->task.join();
 	}
 	void getReply(void){
 		while(this->reply_queue.empty()){
-			std::this_thread::sleep_for(std::chrono::milliseconds{100}); //This will be exchanged by a condition_variable
+			std::this_thread::sleep_for(std::chrono::milliseconds{100}); //This will be switched for a condition_variable
 		}
 		std::cout<<this->reply_queue.front()<<"\n";
 	}
@@ -58,6 +58,9 @@ protected:
 
 int main(){
 	agency::Agent Smith;
+	//TODO: Remove from queue values that were already used
 	Smith.sendCommand("command value");
+	Smith.getReply();
+	Smith.sendCommand("command useless");
 	Smith.getReply();
 }
