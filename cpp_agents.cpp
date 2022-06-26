@@ -5,6 +5,8 @@
 #include <queue>
 #include <chrono>
 
+#include "cpp_agents.hpp"
+
 namespace local_function{
 
 std::string parse_command(const std::string& command){
@@ -26,41 +28,19 @@ void task_implm(std::queue<std::string>& cmd_queue, std::queue<std::string>& rep
 }
 } //End namespace local_function
 
-namespace agency {
+namespace agency{
 
-class Agent{
-public:
-	explicit Agent(void){
-		this->task = std::thread{local_function::task_implm, std::ref(cmd_queue), std::ref(reply_queue)};
+void Agent::getReply(void)
+{
+	while(this->reply_queue.empty()){
+		std::this_thread::sleep_for(std::chrono::milliseconds{100}); //This will be switched for a condition_variable
 	}
-	~Agent(){
-		this->task.join();
-	}
-	void getReply(void){
-		while(this->reply_queue.empty()){
-			std::this_thread::sleep_for(std::chrono::milliseconds{100}); //This will be switched for a condition_variable
-		}
-		std::cout<<this->reply_queue.front()<<"\n";
-	}
-	void sendCommand(const char *command){
-		this->cmd_queue.push(command);
-	}
-
-protected:
-	std::queue<std::string> cmd_queue;
-	std::queue<std::string> reply_queue;
-	std::thread task;
-};
-
-} //end namespace agency 
-
-
-
-int main(){
-	agency::Agent Smith;
-	//TODO: Remove from queue values that were already used
-	Smith.sendCommand("command value");
-	Smith.getReply();
-	Smith.sendCommand("command useless");
-	Smith.getReply();
+	std::cout<<this->reply_queue.front()<<"\n";
 }
+
+void Agent::sendCommand(const char *command)
+{
+	this->cmd_queue.push(command);
+}
+
+}//End namespace agency
